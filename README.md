@@ -6,7 +6,7 @@ For a full description of the assignment, see the assignment handout at
 If you see any issues with the assignment handout or code, please feel free to
 raise a GitHub issue or open a pull request with a fix.
 
-## Setup
+## Setup mimiiii
 
 ### Environment
 We manage our environments with `uv` to ensure reproducibility, portability, and ease of use.
