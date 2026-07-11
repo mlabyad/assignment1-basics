@@ -97,18 +97,16 @@ def pre_tokenizer(chunk, reg, special_tokens, path):
     file = open(path, "rb")
     file.seek(chunk[0])
     chunk_str = file.read(chunk[1]-chunk[0]).decode("UTF-8")
-    print(chunk_str)
-    print(special_tokens)
-    print(chunk)
     docs = re.split("|".join(special_tokens), chunk_str)
     for doc in docs:
         iter = re.finditer(reg, doc)
         c = next(iter, None)
         while c:
-            if c in dic:
-                dic[c] += 1
+            token = c.group()
+            if token in dic:
+                dic[token] += 1
             else:
-                dic[c] = 1
+                dic[token] = 1
             c = next(iter, None)
     return dic
     
@@ -128,7 +126,7 @@ def pre_tokenize(path, boundaries, special_tokens):
 
 
 if __name__ == "__main__":
-    path = "data/TinyStoriesV2-GPT4-valid.txt"
+    path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/data/TinyStoriesV2-GPT4-valid.txt"
     file = open(path, "rb")
     special_tokens = ["<|endoftext|>"]
     encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
