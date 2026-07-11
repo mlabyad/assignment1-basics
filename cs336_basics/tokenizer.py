@@ -74,20 +74,36 @@ def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_to
         while True:
             chunk_content = file.read(mini_chunk_size)
 
+            if chunk_content == b"":
+                chunks[i] = last_byte
+                break
+
             best_pos = -1
             for token in special_tokens:
                 pos = chunk_content.find(token)
-                if pos == -1 and (best_pos == -1 or pos < best_pos):
+                if pos != -1 and (best_pos == -1 or pos < best_pos):
                     best_pos = pos
 
             if best_pos != -1:
                 chunks[i] = best_pos + curr_position
                 break
             curr_position += mini_chunk_size
+        print(i)
+        print(chunks[i])
     return sorted(set(chunks))
 
 
 if __name__ == "__main__":
-    special_tokens = ['<|endoftext|>']
-    encoded_special_tokens = [i.encode('UTF-8') for i in special_tokens]
-    read_corpus("data/TinyStoriesV2-GPT4-train.txt", 3, 0.2, encoded_special_tokens)
+    path = "data/TinyStoriesV2-GPT4-valid.txt"
+    special_tokens = ["<|endoftext|>"]
+    encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
+    boundaries = read_corpus(path, 6, 0.01, encoded_special_tokens)
+
+    with open(path, "rb") as file:
+        file.seek(boundaries[0])
+        print(file.read(boundaries[1] - boundaries[0]))
+        print("\n")
+        print("\n")
+        print("\n")
+        file.seek(boundaries[1])
+        print(file.read(boundaries[2] - boundaries[1]))
