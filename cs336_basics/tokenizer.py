@@ -10,6 +10,10 @@ import torch
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
 
+import regex as re
+from multiprocessing import Pool
+from functools import partial
+
 def train_bpe(
     input_path: str | os.PathLike,
     vocab_size: int,
@@ -37,8 +41,8 @@ def train_bpe(
                 representing that <token1> was merged with <token2>.
                 Merges are ordered by order of creation.
     """
-
-    corpus_chuncks = read_corpus(input_path, nbr_chunks=4, pct=1, special_tokens=special_tokens)
+    encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
+    corpus_chuncks = read_corpus(input_path, nbr_chunks=4, pct=0.01, special_tokens=encoded_special_tokens)
     pre_tokenized_corpus = pre_tokenize(corpus_chuncks, special_tokens)
     vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size, special_tokens)
     return vocab, merges
@@ -88,6 +92,32 @@ def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_to
     return sorted(set(chunks))
 
 
+def pre_tokenizer(chunck, reg, special_tokens):
+    dic = {}
+    docs = re.split("|".join(special_tokens), chunck)
+    for doc in docs:
+        iter = re.finditer(reg, doc)
+        c = next(iter, None)
+        while c:
+            if c in dic:
+                dic[c] += 1
+            else:
+                dic[c] = 1
+            c = next(iter, None)
+    return dic
+    
+
+def pre_tokenize(chunks, special_tokens):
+    pat = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+    worker = partial(pre_tokenizer, reg=pat, special_tokens=special_tokens)
+
+    with Pool(processes=4) as pool:
+        results = pool.map(worker, chunks)
+
+    return results
+
+
+
 if __name__ == "__main__":
     path = "data/TinyStoriesV2-GPT4-valid.txt"
     special_tokens = ["<|endoftext|>"]
@@ -95,3 +125,7 @@ if __name__ == "__main__":
     boundaries = read_corpus(path, 6, 0.01, encoded_special_tokens)
 
     print(boundaries)
+
+    pre_tokenized_corpus = pre_tokenize(boundaries, special_tokens)
+
+    print(pre_tokenized_corpus)
