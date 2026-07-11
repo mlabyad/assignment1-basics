@@ -42,8 +42,8 @@ def train_bpe(
                 Merges are ordered by order of creation.
     """
     encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
-    corpus_chuncks = read_corpus(input_path, nbr_chunks=4, pct=0.01, special_tokens=encoded_special_tokens)
-    pre_tokenized_corpus = pre_tokenize(corpus_chuncks, special_tokens)
+    corpus_chunks = read_corpus(input_path, nbr_chunks=4, pct=0.01, special_tokens=encoded_special_tokens)
+    pre_tokenized_corpus = pre_tokenize(corpus_chunks, special_tokens)
     vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size, special_tokens)
     return vocab, merges
 
@@ -92,9 +92,15 @@ def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_to
     return sorted(set(chunks))
 
 
-def pre_tokenizer(chunck, reg, special_tokens):
+def pre_tokenizer(chunk, reg, special_tokens, path):
     dic = {}
-    docs = re.split("|".join(special_tokens), chunck)
+    file = open(path, "rb")
+    file.seek(chunk[0])
+    chunk_str = file.read(chunk[1]-chunk[0])
+    print(chunk_str)
+    print(special_tokens)
+    print(chunk)
+    docs = re.split("|".join(special_tokens), chunk_str)
     for doc in docs:
         iter = re.finditer(reg, doc)
         c = next(iter, None)
@@ -107,9 +113,12 @@ def pre_tokenizer(chunck, reg, special_tokens):
     return dic
     
 
-def pre_tokenize(chunks, special_tokens):
+def pre_tokenize(path, boundaries, special_tokens):
+    chunks = []
+    for b in range(1, len(boundaries)):
+        chunks.append((boundaries[b-1], boundaries[b]))
     pat = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
-    worker = partial(pre_tokenizer, reg=pat, special_tokens=special_tokens)
+    worker = partial(pre_tokenizer, reg=pat, special_tokens=special_tokens, path=path)
 
     with Pool(processes=4) as pool:
         results = pool.map(worker, chunks)
@@ -120,12 +129,13 @@ def pre_tokenize(chunks, special_tokens):
 
 if __name__ == "__main__":
     path = "data/TinyStoriesV2-GPT4-valid.txt"
+    file = open(path, "rb")
     special_tokens = ["<|endoftext|>"]
     encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
-    boundaries = read_corpus(path, 6, 0.01, encoded_special_tokens)
+    boundaries = read_corpus(path, 6, 0.001, encoded_special_tokens)
 
     print(boundaries)
 
-    pre_tokenized_corpus = pre_tokenize(boundaries, special_tokens)
+    pre_tokenized_corpus = pre_tokenize(path, boundaries, special_tokens)
 
     print(pre_tokenized_corpus)
