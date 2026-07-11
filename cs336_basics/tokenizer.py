@@ -63,9 +63,6 @@ def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_to
 
     chunks = [i * chunk_size for i in range(nbr_chunks+1)]
     chunks[-1] = last_byte
-    print(total_size)
-    print(last_byte)
-    print(chunks)
 
     mini_chunk_size = 4028
     for i in range(1, len(chunks)-1):
@@ -88,8 +85,6 @@ def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_to
                 chunks[i] = best_pos + curr_position
                 break
             curr_position += mini_chunk_size
-        print(i)
-        print(chunks[i])
     return sorted(set(chunks))
 
 
@@ -99,11 +94,4 @@ if __name__ == "__main__":
     encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
     boundaries = read_corpus(path, 6, 0.01, encoded_special_tokens)
 
-    with open(path, "rb") as file:
-        file.seek(boundaries[0])
-        print(file.read(boundaries[1] - boundaries[0]))
-        print("\n")
-        print("\n")
-        print("\n")
-        file.seek(boundaries[1])
-        print(file.read(boundaries[2] - boundaries[1]))
+    print(boundaries)
