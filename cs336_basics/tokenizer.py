@@ -92,21 +92,23 @@ def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_to
     return sorted(set(chunks))
 
 
-def pre_tokenizer(chunk, reg, special_tokens, path):
+def pre_tokenizer(chunk, reg, special_tokens, path) -> dict[tuple[bytes], int]:
     dic = {}
     file = open(path, "rb")
     file.seek(chunk[0])
     chunk_str = file.read(chunk[1]-chunk[0]).decode("UTF-8")
-    docs = re.split("|".join(special_tokens), chunk_str)
+    pattern = "|".join(re.escape(token) for token in special_tokens)
+    docs = re.split(pattern, chunk_str)
     for doc in docs:
         iter = re.finditer(reg, doc)
         c = next(iter, None)
         while c:
             token = c.group()
-            if token in dic:
-                dic[token] += 1
+            tt = tuple(sorted(list(token)))
+            if tt in dic:
+                dic[tt] += 1
             else:
-                dic[token] = 1
+                dic[tt] = 1
             c = next(iter, None)
     return dic
     
