@@ -104,7 +104,7 @@ def pre_tokenizer(chunk, reg, special_tokens, path) -> dict[tuple[bytes], int]:
         c = next(iter, None)
         while c:
             token = c.group()
-            tt = tuple(sorted(list(token)))
+            tt = tuple(sorted(list(token.encode("UTF-8"))))
             if tt in dic:
                 dic[tt] += 1
             else:
