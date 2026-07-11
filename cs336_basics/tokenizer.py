@@ -38,7 +38,18 @@ def train_bpe(
                 Merges are ordered by order of creation.
     """
 
-    corpus = read_corpus(input_path)
+    corpus = read_corpus(input_path, pct=1)
     pre_tokenized_corpus = pre_tokenize(corpus, special_tokens)
     vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size, special_tokens)
     return vocab, merges
+
+def read_corpus(input_path: str | os.PathLike, pct: float = 1) -> list[str]:
+    """Read the corpus from the given path and return a list of strings.
+
+    Args:
+        input_path (str | os.PathLike): Path to BPE tokenizer training data.
+        pct (float, optional): Percentage of the corpus to read. Defaults to 1 (read all).
+
+    Returns:
+        list[str]: List of strings in the corpus.
+    """
