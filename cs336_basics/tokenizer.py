@@ -122,7 +122,6 @@ def pre_tokenize(path, boundaries, special_tokens):
 
     with Pool(processes=4) as pool:
         results = pool.map(worker, chunks)
-
     return results
 
 
@@ -139,3 +138,4 @@ if __name__ == "__main__":
     pre_tokenized_corpus = pre_tokenize(path, boundaries, special_tokens)
 
     print(pre_tokenized_corpus)
+    print(type(pre_tokenized_corpus))
