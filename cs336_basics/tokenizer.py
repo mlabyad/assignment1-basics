@@ -96,7 +96,7 @@ def pre_tokenizer(chunk, reg, special_tokens, path):
     dic = {}
     file = open(path, "rb")
     file.seek(chunk[0])
-    chunk_str = file.read(chunk[1]-chunk[0])
+    chunk_str = file.read(chunk[1]-chunk[0]).decode("UTF-8")
     print(chunk_str)
     print(special_tokens)
     print(chunk)
