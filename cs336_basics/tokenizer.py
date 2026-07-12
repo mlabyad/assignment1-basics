@@ -97,7 +97,7 @@ def pre_tokenizer(chunk, reg, special_tokens, path) -> dict[tuple[bytes, ...], i
         c = next(iter, None)
         while c:
             token = c.group()
-            tt = tuple(sorted(list(token.encode("UTF-8"))))
+            tt = tuple(bytes([b]) for b in token.encode("UTF-8"))
             if tt in dic:
                 dic[tt] += 1
             else:
@@ -135,6 +135,8 @@ def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: in
     m = max(pair_count, key=lambda k: pair_count[k])
 
     print(m)
+    print(m[0].decode("UTF-8"))
+    print(m[1].decode("UTF-8"))
     print(pair_count[m])
 
     return init_vocab, pair_count
@@ -154,4 +156,4 @@ if __name__ == "__main__":
     print(type(pre_tokenized_corpus))
 
     vocab, merges = learn_bpe(pre_tokenized_corpus, 5)
-    print(merges)
+    # print(merges)
