@@ -36,8 +36,8 @@ def train_bpe(
     """
     encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
     corpus_chunks = read_corpus(input_path, nbr_chunks=4, pct=0.01, special_tokens=encoded_special_tokens)
-    pre_tokenized_corpus = pre_tokenize(corpus_chunks, special_tokens)
-    vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size)
+    pre_tokenized_corpus = pre_tokenize(input_path, corpus_chunks, special_tokens)
+    vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size, encoded_special_tokens)
     return vocab, merges
 
 def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_tokens: list[bytes] = None) -> list[int]:
@@ -135,6 +135,7 @@ def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: in
     for i in range(256):
         init_vocab[pos + i] = bytes([i])
     pos += 256
+    merges: list[tuple[bytes, bytes]] = []
     while pos < vocab_size:
         pair_count = {}
         for k, v in pre_tokenized_corpus.items():
@@ -147,8 +148,9 @@ def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: in
 
         init_vocab[pos] = m[0] + m[1]
         pos += 1
+        merges.append(m)
 
-    return init_vocab, pair_count
+    return init_vocab, merges
 
 def update_corpus(corpus, pair):
     new_corpus = {}
@@ -178,8 +180,8 @@ if __name__ == "__main__":
 
     pre_tokenized_corpus = pre_tokenize(path, boundaries, special_tokens)
 
-    print(pre_tokenized_corpus)
-    print(type(pre_tokenized_corpus))
+    # print(pre_tokenized_corpus)
 
-    vocab, merges = learn_bpe(pre_tokenized_corpus, 260, encoded_special_tokens)
-    print(vocab)
+    vocab, merges = learn_bpe(pre_tokenized_corpus, 264, encoded_special_tokens)
+    # print(vocab)
+    # print(merges)
