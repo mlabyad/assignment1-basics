@@ -142,7 +142,7 @@ def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: in
             for i in range(len(k)-1):
                 pair_count[(k[i], k[i+1])] = pair_count.get((k[i], k[i+1]), 0) + v
 
-        m = max(pair_count, key=lambda k: pair_count[k])
+        m = max(pair_count, key=lambda k: (pair_count[k], k[0], k[1]))
 
         pre_tokenized_corpus = update_corpus(pre_tokenized_corpus, m)
 
@@ -183,5 +183,5 @@ if __name__ == "__main__":
     # print(pre_tokenized_corpus)
 
     vocab, merges = learn_bpe(pre_tokenized_corpus, 264, encoded_special_tokens)
-    # print(vocab)
-    # print(merges)
+    print(len(vocab))
+    print(len(merges))
