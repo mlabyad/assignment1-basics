@@ -2,13 +2,6 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Iterable
-from typing import IO, Any, BinaryIO
-
-import numpy.typing as npt
-import torch
-from jaxtyping import Bool, Float, Int
-from torch import Tensor
 
 import regex as re
 from multiprocessing import Pool
@@ -132,8 +125,14 @@ def pre_tokenize(path, boundaries, special_tokens):
                 res[k] = d[k]
     return res
 
-def learn_bpe(pre_tokenized_corpus, vocab_size):
-    return None
+def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: int) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
+    init_vocab: dict[int, bytes] = {}
+    pair_count = {}
+    for k, v in pre_tokenized_corpus:
+        for i in range(len(k)-1):
+            pair_count[(k[i], k[i+1])] = pair_count.get((k[i], k[i+1]), 0) + v
+
+    return init_vocab, pair_count
 
 if __name__ == "__main__":
     path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/data/TinyStoriesV2-GPT4-valid.txt"
@@ -148,3 +147,6 @@ if __name__ == "__main__":
 
     print(pre_tokenized_corpus)
     print(type(pre_tokenized_corpus))
+
+    vocab, merges = learn_bpe(pre_tokenized_corpus, 5)
+    print(merges)
