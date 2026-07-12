@@ -131,6 +131,11 @@ def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: in
     for k, v in pre_tokenized_corpus.items():
         for i in range(len(k)-1):
             pair_count[(k[i], k[i+1])] = pair_count.get((k[i], k[i+1]), 0) + v
+    
+    m = max(pair_count, key=lambda k: pair_count[k])
+
+    print(m)
+    print(pair_count[m])
 
     return init_vocab, pair_count
 
