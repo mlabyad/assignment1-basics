@@ -128,7 +128,7 @@ def pre_tokenize(path, boundaries, special_tokens):
 def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: int) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
     init_vocab: dict[int, bytes] = {}
     pair_count = {}
-    for k, v in pre_tokenized_corpus:
+    for k, v in pre_tokenized_corpus.items():
         for i in range(len(k)-1):
             pair_count[(k[i], k[i+1])] = pair_count.get((k[i], k[i+1]), 0) + v
 
