@@ -44,7 +44,7 @@ def train_bpe(
     encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
     corpus_chunks = read_corpus(input_path, nbr_chunks=4, pct=0.01, special_tokens=encoded_special_tokens)
     pre_tokenized_corpus = pre_tokenize(corpus_chunks, special_tokens)
-    vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size, special_tokens)
+    vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size)
     return vocab, merges
 
 def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_tokens: list[bytes] = None) -> list[int]:
@@ -92,7 +92,7 @@ def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_to
     return sorted(set(chunks))
 
 
-def pre_tokenizer(chunk, reg, special_tokens, path) -> dict[tuple[bytes], int]:
+def pre_tokenizer(chunk, reg, special_tokens, path) -> dict[tuple[bytes, ...], int]:
     dic = {}
     file = open(path, "rb")
     file.seek(chunk[0])
@@ -122,9 +122,18 @@ def pre_tokenize(path, boundaries, special_tokens):
 
     with Pool(processes=4) as pool:
         results = pool.map(worker, chunks)
-    return results
+    
+    res = {}
+    for d in results:
+        for k in d:
+            if k in res:
+                res[k] += d[k]
+            else:
+                res[k] = d[k]
+    return res
 
-
+def learn_bpe(pre_tokenized_corpus, vocab_size):
+    return None
 
 if __name__ == "__main__":
     path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/data/TinyStoriesV2-GPT4-valid.txt"
