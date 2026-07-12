@@ -125,21 +125,47 @@ def pre_tokenize(path, boundaries, special_tokens):
                 res[k] = d[k]
     return res
 
-def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: int) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
+def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: int, special_tokens) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
     init_vocab: dict[int, bytes] = {}
-    pair_count = {}
-    for k, v in pre_tokenized_corpus.items():
-        for i in range(len(k)-1):
-            pair_count[(k[i], k[i+1])] = pair_count.get((k[i], k[i+1]), 0) + v
-    
-    m = max(pair_count, key=lambda k: pair_count[k])
+    pos = 0
+    for i in special_tokens:
+        init_vocab[pos] = i
+        pos += 1
+    pos = len(special_tokens)
+    for i in range(256):
+        init_vocab[pos + i] = bytes([i])
+    pos += 256
+    while pos < vocab_size:
+        pair_count = {}
+        for k, v in pre_tokenized_corpus.items():
+            for i in range(len(k)-1):
+                pair_count[(k[i], k[i+1])] = pair_count.get((k[i], k[i+1]), 0) + v
 
-    print(m)
-    print(m[0].decode("UTF-8"))
-    print(m[1].decode("UTF-8"))
-    print(pair_count[m])
+        m = max(pair_count, key=lambda k: pair_count[k])
+
+        pre_tokenized_corpus = update_corpus(pre_tokenized_corpus, m)
+
+        init_vocab[pos] = m[0] + m[1]
+        pos += 1
 
     return init_vocab, pair_count
+
+def update_corpus(corpus, pair):
+    new_corpus = {}
+    merged = pair[0] + pair[1]
+    for token_tuple, count in corpus.items():
+        new_tuple = []
+        i = 0
+        while i < len(token_tuple):
+            if i < len(token_tuple) - 1 and token_tuple[i] == pair[0] and token_tuple[i+1] == pair[1]:
+                new_tuple.append(merged)
+                i += 2
+            else:
+                new_tuple.append(token_tuple[i])
+                i += 1
+        new_corpus[tuple(new_tuple)] = count
+    return new_corpus
+
 
 if __name__ == "__main__":
     path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/data/TinyStoriesV2-GPT4-valid.txt"
@@ -155,5 +181,5 @@ if __name__ == "__main__":
     print(pre_tokenized_corpus)
     print(type(pre_tokenized_corpus))
 
-    vocab, merges = learn_bpe(pre_tokenized_corpus, 5)
-    # print(merges)
+    vocab, merges = learn_bpe(pre_tokenized_corpus, 260, encoded_special_tokens)
+    print(vocab)
