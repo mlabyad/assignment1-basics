@@ -35,7 +35,7 @@ def train_bpe(
                 Merges are ordered by order of creation.
     """
     encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
-    corpus_chunks = read_corpus(input_path, nbr_chunks=4, pct=0.01, special_tokens=encoded_special_tokens)
+    corpus_chunks = read_corpus(input_path, nbr_chunks=4, pct=1, special_tokens=encoded_special_tokens)
     pre_tokenized_corpus = pre_tokenize(input_path, corpus_chunks, special_tokens)
     vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size, encoded_special_tokens)
     return vocab, merges
@@ -143,7 +143,6 @@ def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: in
                 pair_count[(k[i], k[i+1])] = pair_count.get((k[i], k[i+1]), 0) + v
 
         m = max(pair_count, key=lambda k: (pair_count[k], k[0], k[1]))
-
         pre_tokenized_corpus = update_corpus(pre_tokenized_corpus, m)
 
         init_vocab[pos] = m[0] + m[1]
@@ -170,18 +169,10 @@ def update_corpus(corpus, pair):
 
 
 if __name__ == "__main__":
-    path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/data/TinyStoriesV2-GPT4-valid.txt"
-    file = open(path, "rb")
-    special_tokens = ["<|endoftext|>"]
-    encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
-    boundaries = read_corpus(path, 6, 0.001, encoded_special_tokens)
 
-    print(boundaries)
-
-    pre_tokenized_corpus = pre_tokenize(path, boundaries, special_tokens)
-
-    # print(pre_tokenized_corpus)
-
-    vocab, merges = learn_bpe(pre_tokenized_corpus, 264, encoded_special_tokens)
-    print(len(vocab))
-    print(len(merges))
+    input_path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/tests/fixtures/corpus.en"
+    vocab, merges = train_bpe(
+        input_path=input_path,
+        vocab_size=500,
+        special_tokens=["<|endoftext|>"],
+    )
