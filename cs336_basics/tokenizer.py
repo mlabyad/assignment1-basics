@@ -35,7 +35,7 @@ def train_bpe(
                 Merges are ordered by order of creation.
     """
     encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
-    corpus_chunks = read_corpus(input_path, nbr_chunks=8, pct=1, special_tokens=encoded_special_tokens)
+    corpus_chunks = read_corpus(input_path, nbr_chunks=4, pct=1, special_tokens=encoded_special_tokens)
     pre_tokenized_corpus = pre_tokenize(input_path, corpus_chunks, special_tokens)
     vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size, encoded_special_tokens)
     return vocab, merges
@@ -111,7 +111,7 @@ def pre_tokenize(path, boundaries, special_tokens):
     pat = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     worker = partial(pre_tokenizer, reg=pat, special_tokens=special_tokens, path=path)
 
-    with Pool(processes=8) as pool:
+    with Pool(processes=4) as pool:
         results = pool.map(worker, chunks)
     
     res = {}
@@ -203,6 +203,14 @@ if __name__ == "__main__":
         special_tokens=["<|endoftext|>"],
     )
     profiler.disable()
+
+    import pickle
+
+
+    with open("merges.pkl", "wb") as f:
+        pickle.dump(merges, f)
+    with open("vocab.pkl", "wb") as f:
+        pickle.dump(vocab, f)
 
     stats = pstats.Stats(profiler)
     stats.dump_stats("profile_out.prof")
