@@ -35,7 +35,7 @@ def train_bpe(
                 Merges are ordered by order of creation.
     """
     encoded_special_tokens = [token.encode("utf-8") for token in special_tokens]
-    corpus_chunks = read_corpus(input_path, nbr_chunks=4, pct=1, special_tokens=encoded_special_tokens)
+    corpus_chunks = read_corpus(input_path, nbr_chunks=8, pct=1, special_tokens=encoded_special_tokens)
     pre_tokenized_corpus = pre_tokenize(input_path, corpus_chunks, special_tokens)
     vocab, merges = learn_bpe(pre_tokenized_corpus, vocab_size, encoded_special_tokens)
     return vocab, merges
@@ -84,7 +84,6 @@ def read_corpus(input_path: str, nbr_chunks: int = 3, pct: float = 1, special_to
             curr_position += mini_chunk_size
     return sorted(set(chunks))
 
-
 def pre_tokenizer(chunk, reg, special_tokens, path) -> dict[tuple[bytes, ...], int]:
     dic = {}
     file = open(path, "rb")
@@ -104,7 +103,6 @@ def pre_tokenizer(chunk, reg, special_tokens, path) -> dict[tuple[bytes, ...], i
                 dic[tt] = 1
             c = next(iter, None)
     return dic
-    
 
 def pre_tokenize(path, boundaries, special_tokens):
     chunks = []
@@ -113,7 +111,7 @@ def pre_tokenize(path, boundaries, special_tokens):
     pat = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
     worker = partial(pre_tokenizer, reg=pat, special_tokens=special_tokens, path=path)
 
-    with Pool(processes=4) as pool:
+    with Pool(processes=8) as pool:
         results = pool.map(worker, chunks)
     
     res = {}
@@ -124,6 +122,26 @@ def pre_tokenize(path, boundaries, special_tokens):
             else:
                 res[k] = d[k]
     return res
+
+def compute_pair_counts(corpus):
+    pair_count = {}
+    for k, v in corpus.items():
+        for i in range(len(k) - 1):
+            p = (k[i], k[i+1])
+            pair_count[p] = pair_count.get(p, 0) + v
+    return pair_count
+
+def pair_count_delta(pair_count, changes):
+    for old_tt, new_tt, count in changes:
+        for i in range(len(old_tt) - 1):
+            p = (old_tt[i], old_tt[i+1])
+            pair_count[p] -= count
+            if pair_count[p] <= 0:
+                del pair_count[p]
+        for i in range(len(new_tt) - 1):
+            p = (new_tt[i], new_tt[i+1])
+            pair_count[p] = pair_count.get(p, 0) + count
+    return pair_count
 
 def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: int, special_tokens) -> tuple[dict[int, bytes], list[tuple[bytes, bytes]]]:
     init_vocab: dict[int, bytes] = {}
@@ -136,15 +154,12 @@ def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: in
         init_vocab[pos + i] = bytes([i])
     pos += 256
     merges: list[tuple[bytes, bytes]] = []
+    pair_count = compute_pair_counts(pre_tokenized_corpus)
     while pos < vocab_size:
-        pair_count = {}
-        for k, v in pre_tokenized_corpus.items():
-            for i in range(len(k)-1):
-                pair_count[(k[i], k[i+1])] = pair_count.get((k[i], k[i+1]), 0) + v
 
         m = max(pair_count, key=lambda k: (pair_count[k], k[0], k[1]))
-        pre_tokenized_corpus = update_corpus(pre_tokenized_corpus, m)
-
+        pre_tokenized_corpus, changes = update_corpus(pre_tokenized_corpus, m)
+        pair_count = pair_count_delta(pair_count, changes)
         init_vocab[pos] = m[0] + m[1]
         pos += 1
         merges.append(m)
@@ -152,27 +167,43 @@ def learn_bpe(pre_tokenized_corpus: dict[tuple[bytes, ...], int], vocab_size: in
     return init_vocab, merges
 
 def update_corpus(corpus, pair):
-    new_corpus = {}
-    merged = pair[0] + pair[1]
-    for token_tuple, count in corpus.items():
+    a, b = pair
+    merged = a + b
+    changes = []
+    for tt, count in corpus.items():
+        if a not in tt:
+            continue
         new_tuple = []
-        i = 0
-        while i < len(token_tuple):
-            if i < len(token_tuple) - 1 and token_tuple[i] == pair[0] and token_tuple[i+1] == pair[1]:
-                new_tuple.append(merged)
-                i += 2
+        i = 0; n = len(tt); changed = False
+        while i < n:
+            if i < n - 1 and tt[i] == a and tt[i+1] == b:
+                new_tuple.append(merged); i += 2; changed = True
             else:
-                new_tuple.append(token_tuple[i])
-                i += 1
-        new_corpus[tuple(new_tuple)] = count
-    return new_corpus
+                new_tuple.append(tt[i]); i += 1
+        if changed:
+            changes.append((tt, tuple(new_tuple), count))
+    for old, new, count in changes:
+        del corpus[old]
+        corpus[new] = corpus.get(new, 0) + count
+    return corpus, changes
 
 
 if __name__ == "__main__":
 
-    input_path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/tests/fixtures/corpus.en"
+    # input_path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/tests/fixtures/corpus.en"
+    input_path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/data/TinyStoriesV2-GPT4-train.txt"
+    import cProfile, pstats
+
+
+    profiler = cProfile.Profile()
+    profiler.enable()
     vocab, merges = train_bpe(
         input_path=input_path,
-        vocab_size=500,
+        vocab_size=10000,
         special_tokens=["<|endoftext|>"],
     )
+    profiler.disable()
+
+    stats = pstats.Stats(profiler)
+    stats.dump_stats("profile_out.prof")
+    stats.sort_stats("cumulative").print_stats(20)
