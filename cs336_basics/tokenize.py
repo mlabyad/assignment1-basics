@@ -50,6 +50,15 @@ class Tokenizer:
         pieces: list[tuple[str, bool]] = []
         start = 0
 
+        for match in re.finditer(pattern, text):
+            if match.start() > start:
+                pieces.append((text[start:match.start()], False))
+            pieces.append((match.group(), True))
+            start = match.end()
+
+        if start < len(text):
+            pieces.append((text[start:], False))
+
         return pieces
 
     def _apply_merges(self, symbols: list[bytes]) -> list[bytes]:
@@ -71,3 +80,7 @@ class Tokenizer:
         # adapter at [adapters.get_tokenizer] . Then, run uv run pytest tests/test_tokenizer.py.
         decoded_bytes = b"".join(self.vocab[token_id] for token_id in ids)
         return decoded_bytes.decode("utf-8", errors="replace")
+
+
+if __name__ == "__main__":
+    t = Tokenizer.from_files("ts_vocab.pkl", "ts_merges.pkl", ["<|endoftext|>"])

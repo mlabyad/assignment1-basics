@@ -190,7 +190,7 @@ def update_corpus(corpus, pair):
 
 if __name__ == "__main__":
 
-    input_path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/data/owt_train.txt"
+    # input_path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/data/owt_train.txt"
     input_path = "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/data/TinyStoriesV2-GPT4-train.txt"
     import cProfile, pstats
 
@@ -206,7 +206,7 @@ if __name__ == "__main__":
 
     import pickle
 
-    with open("ts_vocab.pkl", "wb") as f:
+    with open("ts_merges.pkl", "wb") as f:
         pickle.dump(merges, f)
 
     with open("ts_vocab.pkl", "wb") as f:
