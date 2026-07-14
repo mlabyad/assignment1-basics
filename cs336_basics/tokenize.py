@@ -64,7 +64,25 @@ class Tokenizer:
     def _apply_merges(self, symbols: list[bytes]) -> list[bytes]:
         merged = symbols[:]
 
+        while len(merged) > 1:
+            best_index = -1
+            best_rank = None
 
+            for i in range(len(merged) - 1):
+                pair = (merged[i], merged[i + 1])
+                rank = self.merge_rank.get(pair)
+                if rank is not None and (best_rank is None or rank < best_rank):
+                    best_rank = rank
+                    best_index = i
+
+            if best_index == -1:
+                break
+
+            merged = (
+                merged[:best_index]
+                + [merged[best_index] + merged[best_index + 1]]
+                + merged[best_index + 2:]
+            )
 
         return merged
 
@@ -83,4 +101,5 @@ class Tokenizer:
 
 
 if __name__ == "__main__":
-    t = Tokenizer.from_files("ts_vocab.pkl", "ts_merges.pkl", ["<|endoftext|>"])
+    t = Tokenizer.from_files("C:/Users/D641771/Desktop/projects/AI/assignment1-basics/ts_vocab.pkl", "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/ts_merges.pkl", ["<|endoftext|>"])
+    t.encode('hi')
