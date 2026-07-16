@@ -102,4 +102,5 @@ class Tokenizer:
 
 if __name__ == "__main__":
     t = Tokenizer.from_files("C:/Users/D641771/Desktop/projects/AI/assignment1-basics/ts_vocab.pkl", "C:/Users/D641771/Desktop/projects/AI/assignment1-basics/ts_merges.pkl", ["<|endoftext|>"])
-    t.encode('hi')
+    print(t.encode('hi'))
+    print(t.decode([257, 258, 259, 6983]))
